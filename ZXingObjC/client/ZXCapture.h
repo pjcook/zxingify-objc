@@ -29,7 +29,10 @@
 @property (nonatomic, strong) AVCaptureDevice *captureDevice;
 @property (nonatomic, copy) NSString *captureToFilename;
 @property (nonatomic, weak) id<ZXCaptureDelegate> delegate;
+#if TARGET_OS_VISION
+#else
 @property (nonatomic, assign) AVCaptureFocusMode focusMode;
+#endif
 @property (nonatomic, strong) ZXDecodeHints *hints;
 @property (nonatomic, assign) CGImageRef lastScannedImage;
 @property (nonatomic, assign) BOOL invert;

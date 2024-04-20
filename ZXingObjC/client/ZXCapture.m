@@ -32,7 +32,10 @@
 @property (nonatomic, strong) dispatch_queue_t captureQueue;
 @property (nonatomic, assign) BOOL hardStop;
 @property (nonatomic, strong) AVCaptureDeviceInput *input;
+#if TARGET_OS_VISION
+#else
 @property (nonatomic, strong) AVCaptureVideoPreviewLayer *layer;
+#endif
 @property (nonatomic, strong) CALayer *luminanceLayer;
 @property (nonatomic, assign) int orderInSkip;
 @property (nonatomic, assign) int orderOutSkip;
@@ -51,7 +54,10 @@
   if (self = [super init]) {
     _captureDeviceIndex = -1;
     _captureQueue = dispatch_queue_create("com.zxing.captureQueue", NULL);
+#if TARGET_OS_VISION
+#else
     _focusMode = AVCaptureFocusModeContinuousAutoFocus;
+#endif
     _hardStop = NO;
     _hints = [ZXDecodeHints hints];
     _lastScannedImage = NULL;
@@ -94,6 +100,9 @@
 #pragma mark - Property Getters
 
 - (CALayer *)layer {
+#if TARGET_OS_VISION
+    [CALayer new];
+#else
   AVCaptureVideoPreviewLayer *layer = (AVCaptureVideoPreviewLayer *)_layer;
   if (!_layer) {
     layer = [[AVCaptureVideoPreviewLayer alloc] initWithSession:self.session];
@@ -104,6 +113,7 @@
     _layer = layer;
   }
   return layer;
+#endif
 }
 
 - (AVCaptureVideoDataOutput *)output {
@@ -141,6 +151,8 @@
   [self startStop];
 }
 
+#if TARGET_OS_VISION
+#else
 - (void)setFocusMode:(AVCaptureFocusMode)focusMode {
   if ([self.input.device isFocusModeSupported:focusMode] && self.input.device.focusMode != focusMode) {
     _focusMode = focusMode;
@@ -150,6 +162,7 @@
     [self.input.device unlockForConfiguration];
   }
 }
+#endif
 
 - (void)setLastScannedImage:(CGImageRef)lastScannedImage {
   if (_lastScannedImage) {
@@ -180,10 +193,13 @@
   
   [self.input.device lockForConfiguration:nil];
   
+#if TARGET_OS_VISION
+#else
   AVCaptureTorchMode torchMode = self.torch ? AVCaptureTorchModeOn : AVCaptureTorchModeOff;
   if ([self.input.device isTorchModeSupported:torchMode]) {
     self.input.device.torchMode = torchMode;
   }
+#endif
   
   [self.input.device unlockForConfiguration];
 }
@@ -211,13 +227,21 @@
 }
 
 - (BOOL)hasFront {
+#if TARGET_OS_VISION
+    return FALSE;
+#else
   NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
   return [devices count] > 1;
+#endif
 }
 
 - (BOOL)hasBack {
+#if TARGET_OS_VISION
+    return FALSE;
+#else
   NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
   return [devices count] > 0;
+#endif
 }
 
 - (BOOL)hasTorch {
@@ -547,6 +571,8 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   
   AVCaptureDevice *zxd = nil;
   
+#if TARGET_OS_VISION
+#else
   NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
   
   if ([devices count] > 0) {
@@ -574,7 +600,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   if (!zxd) {
     zxd = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
   }
-  
+#endif
   self.captureDevice = zxd;
   
   return zxd;
@@ -590,6 +616,8 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   
   AVCaptureDevice *zxd = [self device];
   
+#if TARGET_OS_VISION
+#else
   if (zxd) {
     self.input = [AVCaptureDeviceInput deviceInputWithDevice:zxd error:nil];
     self.focusMode = self.focusMode;
@@ -602,7 +630,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     self.session.sessionPreset = self.sessionPreset;
     [self.session addInput:self.input];
   }
-  
+#endif
   [self.session commitConfiguration];
 }
 
